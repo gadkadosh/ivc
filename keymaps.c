@@ -3,40 +3,23 @@
 #include "keymaps.h"
 #include "main.h"
 
-int hash(char key) {
-    int hash = 135792;
-    hash = hash ^ key;
-    return hash;
+void addDefaultKeymaps(struct Keymaps *keymaps) {
+    addKeymap(keymaps, CTRL_KEY('K'), &clearMessage);
 }
 
-struct KeymapTable *createKeymapTable() {
-    struct KeymapTable *keymaps = malloc(sizeof(*keymaps));
-    keymaps->size = 0;
-    keymaps->capacity = 10;
-    keymaps->table = malloc(keymaps->capacity * sizeof(struct Keymap));
-
-    addKeymap(keymaps, CTRL_KEY('K'), &clearMessage);
-
+struct Keymaps *createKeymapTable() {
+    struct Keymaps *keymaps = malloc(sizeof(*keymaps));
+    addDefaultKeymaps(keymaps);
     return keymaps;
 }
 
-void addKeymap(struct KeymapTable *keymaps, char lhs, void *rhs) {
-    if (keymaps->size >= keymaps->capacity) {
-        keymaps->capacity += 5;
-        keymaps->table = realloc(keymaps->table, keymaps->capacity);
-    }
-
-    int h = hash(lhs);
-
-    keymaps->table[h % keymaps->capacity].lhs = lhs;
-    keymaps->table[h % keymaps->capacity].rhs = rhs;
+void addKeymap(struct Keymaps *keymaps, char lhs, void *rhs) {
+    keymaps->t[(int)lhs] = rhs;
 }
 
-void *find_keymap(struct KeymapTable *keymaps, char lhs) {
-    for (int i = 0; i < keymaps->capacity; i++) {
-        if (keymaps->table[i].lhs == lhs) {
-            return keymaps->table[i].rhs;
-        }
+void *find_keymap(struct Keymaps *keymaps, char lhs) {
+    if (keymaps->t[(int)lhs] != NULL) {
+        return keymaps->t[(int)lhs];
     }
     return NULL;
 }

@@ -29,7 +29,7 @@ struct EditorConfig {
     char *filename;
     char message[80];
     time_t message_time;
-    struct KeymapTable *keymaps;
+    struct Keymaps *keymaps;
 };
 
 enum editorKey {
