@@ -2,8 +2,11 @@
 #define _MAIN_H
 
 #include <termios.h>
+#include <time.h>
 
 #define VERSION "0.0.1"
+
+#define TAB_STOP 8
 
 struct erow {
     int size;
@@ -14,12 +17,16 @@ struct erow {
 
 struct EditorConfig {
     int cx, cy;
+    int rx;
     int screenrows, screencols;
     struct termios orig_termios;
     int numrows;
     int rowoffset;
     int coloffset;
     struct erow *rows;
+    char *filename;
+    char message[80];
+    time_t message_time;
 };
 
 enum editorKey {
