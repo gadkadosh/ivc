@@ -33,6 +33,7 @@ struct EditorConfig {
 };
 
 enum editorKey {
+    BACKSPACE = 127,
     ARROW_LEFT = 1000,
     ARROW_RIGHT,
     ARROW_UP,
@@ -50,6 +51,10 @@ void die(const char *s);
 
 int editorReadKey();
 
+void editorUpdateRow(struct erow *row);
+
 void clearMessage();
+
+void editorAppendRow(char *line, size_t len);
 
 #endif

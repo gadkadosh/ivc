@@ -7,6 +7,7 @@
 #include <time.h>
 #include <unistd.h>
 
+#include "insert.h"
 #include "keymaps.h"
 #include "main.h"
 #include "term.h"
@@ -144,6 +145,14 @@ void editorMoveCursor(int c) {
         E.cx = rowlen;
 }
 
+void editorInsertChar(char c) {
+    if (E.cy == E.numrows) {
+        editorAppendRow("", 0);
+    }
+    editorRowInsertChar(&E.rows[E.cy], c, E.cx);
+    E.cx++;
+}
+
 void editorProcessKeypresses() {
     int c = editorReadKey();
 
@@ -154,6 +163,8 @@ void editorProcessKeypresses() {
         exit(0);
         break;
 
+    case '\r':
+        break;
     case '0':
     case HOME_KEY:
         E.cx = 0;
@@ -177,6 +188,14 @@ void editorProcessKeypresses() {
         while (times--)
             editorMoveCursor(c == PAGE_UP ? ARROW_UP : ARROW_DOWN);
     } break;
+    case BACKSPACE:
+    case DEL_KEY:
+    case CTRL_KEY('h'):
+        break;
+
+    case CTRL_KEY('l'):
+    case '\x1b':
+        break;
 
     case 'g':
     case 'G':
@@ -189,6 +208,9 @@ void editorProcessKeypresses() {
     case ARROW_RIGHT:
     case ARROW_LEFT:
         editorMoveCursor(c);
+        break;
+    default:
+        editorInsertChar(c);
         break;
     }
 }

@@ -3,7 +3,7 @@ CFLAGS=-Wall
 
 all: editor
 
-editor: main.o term.o keymaps.o
+editor: main.o term.o keymaps.o insert.o
 	$(CC) $(CFLAGS) $^ -o $@
 
 %.o: %.c %.h
