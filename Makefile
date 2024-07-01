@@ -3,11 +3,11 @@ CFLAGS=-Wall
 
 all: editor
 
-editor: main.o term.o
+editor: main.o term.o keymaps.o
 	$(CC) $(CFLAGS) $^ -o $@
 
 %.o: %.c %.h
 	$(CC) $(CFLAGS) -c $^
 
 clean:
-	rm editor *.o
+	rm editor *.o *.h.gch

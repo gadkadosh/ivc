@@ -7,10 +7,9 @@
 #include <time.h>
 #include <unistd.h>
 
+#include "keymaps.h"
 #include "main.h"
 #include "term.h"
-
-#define CTRL_KEY(k) ((k) & 0x1f)
 
 struct EditorConfig E;
 
@@ -28,6 +27,8 @@ void editorSetStatusMessage(const char *fmt, ...) {
     va_end(ap);
     time(&E.message_time);
 }
+
+void clearMessage() { editorSetStatusMessage(""); }
 
 int editorReadKey() {
     int nread;
@@ -93,6 +94,11 @@ int editorReadKey() {
         }
 
         return '\x1b';
+    }
+
+    void (*rhs)(void) = find_keymap(E.keymaps, c);
+    if (rhs != NULL) {
+        rhs();
     }
 
     return c;
@@ -183,9 +189,6 @@ void editorProcessKeypresses() {
     case ARROW_RIGHT:
     case ARROW_LEFT:
         editorMoveCursor(c);
-        break;
-    case CTRL_KEY('k'):
-        editorSetStatusMessage("");
         break;
     }
 }
@@ -323,6 +326,8 @@ void initEditor() {
         die("getWindowSize");
     }
     E.screenrows -= 2;
+
+    E.keymaps = createKeymapTable();
 }
 
 void editorUpdateRow(struct erow *row) {

@@ -8,6 +8,8 @@
 
 #define TAB_STOP 8
 
+#define CTRL_KEY(k) ((k) & 0x1f)
+
 struct erow {
     int size;
     int rsize;
@@ -27,6 +29,7 @@ struct EditorConfig {
     char *filename;
     char message[80];
     time_t message_time;
+    struct KeymapTable *keymaps;
 };
 
 enum editorKey {
@@ -46,5 +49,7 @@ void initEditor();
 void die(const char *s);
 
 int editorReadKey();
+
+void clearMessage();
 
 #endif
