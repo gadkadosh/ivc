@@ -31,6 +31,7 @@ struct EditorConfig {
     int coloffset;
     struct erow *rows;
     char *filename;
+    int dirty;
     char message[80];
     time_t message_time;
     struct Keymaps *keymaps;

@@ -146,6 +146,7 @@ void editorInsertChar(char c) {
         editorAppendRow("", 0);
     }
     editorRowInsertChar(&E.rows[E.cy], c, E.cx);
+    E.dirty++;
     E.cx++;
 }
 
@@ -171,9 +172,17 @@ void editorProcessKeypresses() {
     }
     }
 
+    static int quit = 0;
+
     switch (c) {
-    case 'q':
+    case CTRL_KEY('q'):
         if (E.mode == NORMAL) {
+            if (E.dirty > 0 && quit == 0) {
+                editorSetStatusMessage(
+                    "Quit without saving? (C-q again to confirm)");
+                quit++;
+                return;
+            }
             write(STDOUT_FILENO, "\x1b[2J", 4);
             write(STDOUT_FILENO, "\x1b[H", 3);
             exit(0);
@@ -235,6 +244,8 @@ void editorProcessKeypresses() {
         }
         break;
     }
+
+    quit = 0;
 }
 
 void editorDrawMessageLine(struct abuf *ab) {
@@ -250,9 +261,9 @@ void editorDrawStatusline(struct abuf *ab) {
     abAppend(ab, "\x1b[7m", 4);
 
     char lstatus[80], rstatus[80];
-    int filenamelen =
-        snprintf(lstatus, sizeof lstatus, "%s (%d lines)",
-                 E.filename ? E.filename : "[No Name]", E.numrows);
+    int filenamelen = snprintf(lstatus, sizeof lstatus, "%s (%d lines) %s",
+                               E.filename ? E.filename : "[No Name]", E.numrows,
+                               E.dirty ? "[+]" : "");
     abAppend(ab, lstatus, filenamelen + 1);
     int len = snprintf(rstatus, sizeof rstatus, "%d:%d", E.cy + 1, E.cx + 1);
     int padding = E.screencols - filenamelen;
@@ -364,6 +375,7 @@ void initEditor() {
     E.coloffset = 0;
     E.rows = NULL;
     E.filename = NULL;
+    E.dirty = 0;
     E.message[0] = '\0';
     E.message_time = 0;
     E.mode = NORMAL;
@@ -437,6 +449,7 @@ void editorOpen(char *filename) {
 
     free(E.filename);
     E.filename = strndup(filename, 80);
+    E.dirty = 0;
     editorSetStatusMessage("Opened %s", E.filename);
 }
 
@@ -472,6 +485,7 @@ void writeFile() {
     }
     fclose(fp);
     free(str);
+    E.dirty = 0;
     editorSetStatusMessage("%d bytes written to disk", len);
 }
 
