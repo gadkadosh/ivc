@@ -1,8 +1,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "insert.h"
 #include "main.h"
+#include "modes.h"
 
 void editorRowInsertChar(struct erow *row, char c, int cx) {
     if (cx < 0 || cx > row->size)
@@ -14,3 +14,7 @@ void editorRowInsertChar(struct erow *row, char c, int cx) {
 
     editorUpdateRow(row);
 }
+
+void editorSwitchInsertMode() { E.mode = INSERT; }
+
+void editorSwitchNormalMode() { E.mode = NORMAL; }

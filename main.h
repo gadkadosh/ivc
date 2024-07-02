@@ -10,6 +10,10 @@
 
 #define CTRL_KEY(k) ((k) & 0x1f)
 
+extern struct EditorConfig E;
+
+enum Mode { NORMAL, INSERT };
+
 struct erow {
     int size;
     int rsize;
@@ -30,6 +34,7 @@ struct EditorConfig {
     char message[80];
     time_t message_time;
     struct Keymaps *keymaps;
+    enum Mode mode;
 };
 
 enum editorKey {
@@ -49,6 +54,8 @@ void initEditor();
 
 void die(const char *s);
 
+void writeFile();
+
 int editorReadKey();
 
 void editorUpdateRow(struct erow *row);
@@ -56,5 +63,7 @@ void editorUpdateRow(struct erow *row);
 void clearMessage();
 
 void editorAppendRow(char *line, size_t len);
+
+void editorSetStatusMessage(const char *fmt, ...);
 
 #endif

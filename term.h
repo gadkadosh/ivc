@@ -5,8 +5,6 @@
 #include <termios.h>
 #include <unistd.h>
 
-extern struct EditorConfig E;
-
 struct abuf {
     char *b;
     int len;

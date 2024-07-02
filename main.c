@@ -3,13 +3,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/stat.h>
 #include <termios.h>
 #include <time.h>
 #include <unistd.h>
 
-#include "insert.h"
 #include "keymaps.h"
 #include "main.h"
+#include "modes.h"
 #include "term.h"
 
 struct EditorConfig E;
@@ -97,11 +98,6 @@ int editorReadKey() {
         return '\x1b';
     }
 
-    void (*rhs)(void) = find_keymap(E.keymaps, c);
-    if (rhs != NULL) {
-        rhs();
-    }
-
     return c;
 }
 
@@ -156,13 +152,33 @@ void editorInsertChar(char c) {
 void editorProcessKeypresses() {
     int c = editorReadKey();
 
+    switch (E.mode) {
+    case NORMAL: {
+        void (*rhs)(void) = find_keymap(E.keymaps, NORMAL, c);
+        if (rhs != NULL) {
+            rhs();
+            return;
+        }
+        break;
+    }
+    case INSERT: {
+        void (*rhs)(void) = find_keymap(E.keymaps, INSERT, c);
+        if (rhs != NULL) {
+            rhs();
+            return;
+        }
+        break;
+    }
+    }
+
     switch (c) {
     case 'q':
-        write(STDOUT_FILENO, "\x1b[2J", 4);
-        write(STDOUT_FILENO, "\x1b[H", 3);
-        exit(0);
+        if (E.mode == NORMAL) {
+            write(STDOUT_FILENO, "\x1b[2J", 4);
+            write(STDOUT_FILENO, "\x1b[H", 3);
+            exit(0);
+        }
         break;
-
     case '\r':
         break;
     case '0':
@@ -197,6 +213,10 @@ void editorProcessKeypresses() {
     case '\x1b':
         break;
 
+    case CTRL_KEY('s'):
+        writeFile();
+        break;
+
     case 'g':
     case 'G':
     case 'h':
@@ -210,13 +230,18 @@ void editorProcessKeypresses() {
         editorMoveCursor(c);
         break;
     default:
-        editorInsertChar(c);
+        if (E.mode == INSERT) {
+            editorInsertChar(c);
+        }
         break;
     }
 }
 
 void editorDrawMessageLine(struct abuf *ab) {
     abAppend(ab, "\x1b[K", 3);
+    if (E.mode == INSERT)
+        abAppend(ab, "-- INSERT --", 12);
+
     if (time(NULL) - E.message_time < 5)
         abAppend(ab, E.message, strlen(E.message));
 }
@@ -341,6 +366,7 @@ void initEditor() {
     E.filename = NULL;
     E.message[0] = '\0';
     E.message_time = 0;
+    E.mode = NORMAL;
 
     editorSetStatusMessage("Welcome");
 
@@ -412,6 +438,41 @@ void editorOpen(char *filename) {
     free(E.filename);
     E.filename = strndup(filename, 80);
     editorSetStatusMessage("Opened %s", E.filename);
+}
+
+char *editorTextToString(size_t *len) {
+    int buflen = 0;
+    for (int i = 0; i < E.numrows; i++) {
+        buflen += E.rows[i].size + 1;
+    }
+    *len = buflen;
+
+    char *str = malloc(*len);
+    char *p = str;
+    for (int i = 0; i < E.numrows; i++, p++) {
+        memcpy(p, E.rows[i].chars, E.rows[i].size);
+        p += E.rows[i].size;
+        *p = '\n';
+    }
+    return str;
+}
+
+void writeFile() {
+    if (E.filename == NULL)
+        return;
+    size_t len;
+    char *str = editorTextToString(&len);
+    FILE *fp = fopen(E.filename, "w");
+    if (fp == NULL) {
+        editorSetStatusMessage("fopen failed");
+        return;
+    }
+    if (fwrite(str, len, 1, fp) < 1) {
+        editorSetStatusMessage("Can't save! I/O error: %s", strerror(errno));
+    }
+    fclose(fp);
+    free(str);
+    editorSetStatusMessage("%d bytes written to disk", len);
 }
 
 int main(int argc, char *argv[]) {
