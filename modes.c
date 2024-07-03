@@ -15,6 +15,26 @@ void editorRowInsertChar(struct erow *row, char c, int cx) {
     editorUpdateRow(row);
 }
 
+void editorRowDeleteChar(struct erow *row, int cx) {
+    if (cx < 0)
+        return;
+    if (E.mode == INSERT) {
+        memmove(&row->chars[cx], &row->chars[cx + 1], row->size - cx);
+        row->size--;
+        editorUpdateRow(row);
+    }
+}
+
 void editorSwitchInsertMode() { E.mode = INSERT; }
+
+void editorSwitchInsertModeAppend() {
+    editorMoveCursor(ARROW_RIGHT);
+    editorSwitchInsertMode();
+}
+
+void editorSwitchInsertModeAppendEnd() {
+    editorMoveCursorEnd();
+    editorSwitchInsertMode();
+}
 
 void editorSwitchNormalMode() { E.mode = NORMAL; }

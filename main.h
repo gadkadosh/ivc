@@ -59,6 +59,10 @@ void writeFile();
 
 int editorReadKey();
 
+void editorMoveCursor(int c);
+
+void editorMoveCursorEnd();
+
 void editorUpdateRow(struct erow *row);
 
 void clearMessage();

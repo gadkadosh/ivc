@@ -141,6 +141,18 @@ void editorMoveCursor(int c) {
         E.cx = rowlen;
 }
 
+void editorMoveCursorEnd() {
+    if (E.cy < E.numrows)
+        E.cx = E.rows[E.cy].size;
+}
+
+void editorDelChar() {
+    if (E.cx > 0) {
+        editorRowDeleteChar(&E.rows[E.cy], E.cx - 1);
+        E.cx--;
+    }
+}
+
 void editorInsertChar(char c) {
     if (E.cy == E.numrows) {
         editorAppendRow("", 0);
@@ -213,9 +225,13 @@ void editorProcessKeypresses() {
         while (times--)
             editorMoveCursor(c == PAGE_UP ? ARROW_UP : ARROW_DOWN);
     } break;
+
     case BACKSPACE:
     case DEL_KEY:
     case CTRL_KEY('h'):
+        if (c == DEL_KEY)
+            editorMoveCursor(ARROW_RIGHT);
+        editorDelChar();
         break;
 
     case CTRL_KEY('l'):
@@ -412,6 +428,7 @@ void editorUpdateRow(struct erow *row) {
     }
     row->render[idx] = '\0';
     row->rsize = idx;
+    E.dirty++;
 }
 
 void editorAppendRow(char *line, size_t len) {
