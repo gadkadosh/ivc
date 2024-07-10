@@ -5,7 +5,7 @@
 #include "main.h"
 #include "term.h"
 
-void disableRawMode() {
+static void disableRawMode() {
     if (tcsetattr(STDIN_FILENO, TCSAFLUSH, &E.orig_termios) == -1) {
         die("tcsetattr");
     };
@@ -29,7 +29,7 @@ void enableRawMode() {
     }
 }
 
-int getCursorPosition(int *rows, int *cols) {
+static int getCursorPosition(int *rows, int *cols) {
     char buf[32];
     unsigned int i = 0;
 

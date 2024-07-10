@@ -61,13 +61,15 @@ int editorReadKey();
 
 void editorMoveCursor(int c);
 
+int editorRowCxToRx(struct erow *row, int cx);
+
 void editorMoveCursorEnd();
 
 void editorUpdateRow(struct erow *row);
 
 void clearMessage();
 
-void editorAppendRow(char *line, size_t len);
+void editorInsertRow(int at, char *line, size_t len);
 
 void editorSetStatusMessage(const char *fmt, ...);
 

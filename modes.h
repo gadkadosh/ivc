@@ -13,6 +13,8 @@ void editorSwitchInsertModeAppend();
 
 void editorSwitchInsertModeAppendEnd();
 
+void editorAppendNewLine();
+
 void editorSwitchNormalMode();
 
 #endif

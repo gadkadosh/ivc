@@ -10,6 +10,8 @@ void addDefaultKeymaps(struct Keymaps *keymaps) {
     addKeymap(keymaps, NORMAL, 'i', &editorSwitchInsertMode);
     addKeymap(keymaps, NORMAL, 'a', &editorSwitchInsertModeAppend);
     addKeymap(keymaps, NORMAL, 'A', &editorSwitchInsertModeAppendEnd);
+    addKeymap(keymaps, NORMAL, '\r', &editorAppendNewLine);
+    addKeymap(keymaps, INSERT, '\r', &editorAppendNewLine);
 }
 
 struct Keymaps *createKeymapTable() {

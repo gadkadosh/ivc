@@ -13,8 +13,6 @@ struct abuf {
 #define ABUF_INIT                                                              \
     { NULL, 0 }
 
-void disableRawMode();
-
 void enableRawMode();
 
 int getWindowSize(int *rows, int *cols);
