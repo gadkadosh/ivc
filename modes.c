@@ -16,45 +16,30 @@ void editorRowInsertChar(struct erow *row, char c, int cx) {
 }
 
 void editorRowDeleteChar(struct erow *row, int cx) {
-    if (E.mode == INSERT) {
-        if (cx < 0) {
-            editorMoveCursor(ARROW_UP);
-            row = &E.rows[E.cy];
-            row->chars[row->size] = '\0';
-            editorMoveCursorEnd();
-            return;
-        }
-        memmove(&row->chars[cx], &row->chars[cx + 1], row->size - cx);
-        row->size--;
-        editorUpdateRow(row);
+    if (cx < 0) {
+        editorMoveCursor(ARROW_UP);
+        row = &E.rows[E.cy];
+        row->chars[row->size] = '\0';
+        editorMoveCursorEndLine();
+        return;
     }
-}
-
-void editorSwitchInsertMode() { E.mode = INSERT; }
-
-void editorSwitchInsertModeAppend() {
-    editorMoveCursor(ARROW_RIGHT);
-    editorSwitchInsertMode();
-}
-
-void editorSwitchInsertModeAppendEnd() {
-    editorMoveCursorEnd();
-    editorSwitchInsertMode();
+    memmove(&row->chars[cx], &row->chars[cx + 1], row->size - cx);
+    row->size--;
+    editorUpdateRow(row);
 }
 
 void editorAppendNewLine() {
-    if (E.mode == INSERT) {
-        if (E.cx == 0) {
-            editorInsertRow(E.cy, "", 0);
-        } else {
-            struct erow *row = &E.rows[E.cy];
-            editorInsertRow(E.cy + 1, &row->chars[E.cx], row->size - E.cx);
-            row = &E.rows[E.cy];
-            row->size = E.cx;
-            row->chars[E.cx] = '\0';
-            editorUpdateRow(row);
-        }
+    if (E.cx == 0) {
+        editorInsertRow(E.cy, "", 0);
+    } else {
+        struct erow *row = &E.rows[E.cy];
+        editorInsertRow(E.cy + 1, &row->chars[E.cx], row->size - E.cx);
+        row = &E.rows[E.cy];
+        row->size = E.cx;
+        row->chars[E.cx] = '\0';
+        editorUpdateRow(row);
     }
+
     E.cy++;
     E.cx = 0;
 }

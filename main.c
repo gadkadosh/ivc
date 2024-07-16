@@ -8,9 +8,9 @@
 #include <time.h>
 #include <unistd.h>
 
-#include "keymaps.h"
 #include "main.h"
 #include "modes.h"
+#include "normal.h"
 #include "term.h"
 
 struct EditorConfig E;
@@ -22,15 +22,37 @@ void die(const char *s) {
     exit(1);
 }
 
-void editorSetStatusMessage(const char *fmt, ...) {
-    va_list ap;
-    va_start(ap, fmt);
+void vEditorSetStatusMessage(const char *fmt, va_list ap) {
     vsnprintf(E.message, sizeof(E.message), fmt, ap);
-    va_end(ap);
     time(&E.message_time);
 }
 
-void clearMessage() { editorSetStatusMessage(""); }
+void editorSetStatusMessage(const char *fmt, ...) {
+    va_list ap;
+    va_start(ap, fmt);
+    vEditorSetStatusMessage(fmt, ap);
+    va_end(ap);
+}
+
+void editorSetWarningStatusMessage(const char *fmt, ...) {
+    va_list ap;
+    va_start(ap, fmt);
+    char err[80] = "\x1b[33m";
+    strlcat(err, fmt, 78);
+    strlcat(err, "\x1b[0m", 80);
+    vEditorSetStatusMessage(err, ap);
+    va_end(ap);
+}
+
+void editorSetErrorStatusMessage(const char *fmt, ...) {
+    va_list ap;
+    va_start(ap, fmt);
+    char err[80] = "\x1b[31m";
+    strlcat(err, fmt, 78);
+    strlcat(err, "\x1b[0m", 80);
+    vEditorSetStatusMessage(err, ap);
+    va_end(ap);
+}
 
 int editorReadKey() {
     int nread;
@@ -141,7 +163,7 @@ void editorMoveCursor(int c) {
         E.cx = rowlen;
 }
 
-void editorMoveCursorEnd() {
+void editorMoveCursorEndLine() {
     if (E.cy < E.numrows)
         E.cx = E.rows[E.cy].size;
 }
@@ -150,6 +172,12 @@ void editorDelChar() {
     if (E.cx >= 0) {
         editorRowDeleteChar(&E.rows[E.cy], E.cx - 1);
         E.cx--;
+    }
+}
+
+void editorDelCharUnderCursor() {
+    if (E.cx >= 0) {
+        editorRowDeleteChar(&E.rows[E.cy], E.cx);
     }
 }
 
@@ -165,42 +193,17 @@ void editorInsertChar(char c) {
 void editorProcessKeypresses() {
     int c = editorReadKey();
 
-    switch (E.mode) {
-    case NORMAL: {
-        void (*rhs)(void) = find_keymap(E.keymaps, NORMAL, c);
-        if (rhs != NULL) {
-            rhs();
-            return;
-        }
-        break;
+    if (E.mode == NORMAL) {
+        executeNormalCommand(c);
+        return;
     }
-    case INSERT: {
-        void (*rhs)(void) = find_keymap(E.keymaps, INSERT, c);
-        if (rhs != NULL) {
-            rhs();
-            return;
-        }
-        break;
-    }
-    }
-
-    static int quit = 0;
 
     switch (c) {
-    case CTRL_KEY('q'):
-        if (E.mode == NORMAL) {
-            if (E.dirty > 0 && quit == 0) {
-                editorSetStatusMessage(
-                    "Quit without saving? (C-q again to confirm)");
-                quit++;
-                return;
-            }
-            write(STDOUT_FILENO, "\x1b[2J", 4);
-            write(STDOUT_FILENO, "\x1b[H", 3);
-            exit(0);
-        }
+    case CTRL_KEY('c'):
+        editorSwitchNormalMode();
         break;
     case '\r':
+        editorAppendNewLine();
         break;
     case '0':
     case HOME_KEY:
@@ -238,16 +241,6 @@ void editorProcessKeypresses() {
     case '\x1b':
         break;
 
-    case CTRL_KEY('s'):
-        writeFile();
-        break;
-
-    case 'g':
-    case 'G':
-    case 'h':
-    case 'j':
-    case 'k':
-    case 'l':
     case ARROW_UP:
     case ARROW_DOWN:
     case ARROW_RIGHT:
@@ -255,13 +248,9 @@ void editorProcessKeypresses() {
         editorMoveCursor(c);
         break;
     default:
-        if (E.mode == INSERT) {
-            editorInsertChar(c);
-        }
+        editorInsertChar(c);
         break;
     }
-
-    quit = 0;
 }
 
 void editorDrawMessageLine(struct abuf *ab) {
@@ -292,7 +281,7 @@ void editorDrawStatusline(struct abuf *ab) {
 
 void editorDrawRows(struct abuf *ab) {
     for (int i = 0; i < E.screenrows; i++) {
-        int filerow = E.rowoffset + i;
+        unsigned int filerow = E.rowoffset + i;
         if (filerow >= E.numrows) {
             if (E.numrows == 0 && i == E.screenrows / 3) {
                 char welcome[80];
@@ -401,8 +390,6 @@ void initEditor() {
         die("getWindowSize");
     }
     E.screenrows -= 2;
-
-    E.keymaps = createKeymapTable();
 }
 
 void editorUpdateRow(struct erow *row) {
@@ -490,8 +477,10 @@ char *editorTextToString(size_t *len) {
 }
 
 void writeFile() {
-    if (E.filename == NULL)
+    if (E.filename == NULL) {
+        editorSetErrorStatusMessage("No filename");
         return;
+    }
     size_t len;
     char *str = editorTextToString(&len);
     FILE *fp = fopen(E.filename, "w");

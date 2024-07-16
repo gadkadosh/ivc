@@ -3,7 +3,7 @@ CFLAGS=-Wall -g
 
 all: editor
 
-editor: main.o term.o keymaps.o modes.o
+editor: main.o term.o modes.o normal.o
 	$(CC) $(CFLAGS) $^ -o $@
 
 %.o: %.c %.h
