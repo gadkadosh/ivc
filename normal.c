@@ -3,8 +3,9 @@
 
 #include "main.h"
 #include "normal.h"
+#include "normal.statics.h"
 
-struct Command {
+static struct Command {
     int key;
     void (*cmd)(void);
 } normal_commands[] = {
